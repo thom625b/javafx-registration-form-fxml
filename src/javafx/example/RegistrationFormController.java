@@ -7,14 +7,20 @@ import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Window;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.IOException;
+
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class RegistrationFormController {
-    
+
     @FXML
-    private TextField nameField, emailField;
+    private TextField nameField;
+    @FXML
+    private TextField emailField;
     @FXML
     private PasswordField passwordField;
     @FXML
@@ -28,45 +34,37 @@ public class RegistrationFormController {
         if (nameField.getText().isEmpty()) {
             AlertHelper.showAlert(Alert.AlertType.ERROR, owner, "Form Error!", "Please enter your name");
             return;
-        } else {
-            String nameRegex = "[a-zA-ZæøåÆØÅ]*";
-            Pattern pattern = Pattern.compile(nameRegex);
-            Matcher matcher = pattern.matcher(nameField.getText());
-            if (!matcher.matches()){
-                AlertHelper.showAlert(Alert.AlertType.ERROR, owner, "Form Error!", "Please enter a valid name");
-                return;
-            }
         }
 
         // Validation for Email Field
-        if (emailField.getText().isEmpty()) {
-            AlertHelper.showAlert(Alert.AlertType.ERROR, owner, "Form Error!", "Please enter your email id");
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        Pattern emailPattern = Pattern.compile(emailRegex);
+        Matcher emailMatcher = emailPattern.matcher(emailField.getText());
+        if (emailField.getText().isEmpty() || !emailMatcher.matches()) {
+            AlertHelper.showAlert(Alert.AlertType.ERROR, owner, "Form Error!", "Please enter a valid email id");
             return;
-        } else {
-            String emailRegex = "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}";
-            Pattern pattern = Pattern.compile(emailRegex);
-            Matcher matcher = pattern.matcher(emailField.getText());
-            if (!matcher.matches()) {
-                AlertHelper.showAlert(Alert.AlertType.ERROR, owner, "Form Error!", "Please enter a valid email");
-                return;
-            }
         }
 
         // Validation for Password Field
-        if (passwordField.getText().isEmpty()) {
-            AlertHelper.showAlert(Alert.AlertType.ERROR, owner, "Form Error!", "Please enter a password");
+        String passwordRegex = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d]{5,12}$";
+        Pattern passwordPattern = Pattern.compile(passwordRegex);
+        Matcher passwordMatcher = passwordPattern.matcher(passwordField.getText());
+        if (passwordField.getText().isEmpty() || !passwordMatcher.matches()) {
+            AlertHelper.showAlert(Alert.AlertType.ERROR, owner, "Form Error!","Password must be between 5 and 12 characters and include at least one uppercase letter, one lowercase letter, and one number.");
             return;
-        } else {
-            String passwordRegex = "(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d]{5,12}";
-            Pattern pattern = Pattern.compile(passwordRegex);
-            Matcher matcher = pattern.matcher(passwordField.getText());
-            if (!matcher.matches()){
-                AlertHelper.showAlert(Alert.AlertType.ERROR, owner, "Form Error!", "Password must be between 5 and 12 characters and include at least one uppercase letter, one lowercase letter, and one number.");
-                return;
-            }
         }
 
-        // Registration Successful
-        AlertHelper.showAlert(Alert.AlertType.CONFIRMATION, owner, "Registration Successful!", "Welcome " + nameField.getText());
+        // Save User Information to File
+        try (FileWriter fileWriter = new FileWriter("data/users.txt", true); // Open in append mode
+             PrintWriter printWriter = new PrintWriter(fileWriter)) {
+            // Write user information to the file
+            printWriter.println("Name: " + nameField.getText() + ", Email: " + emailField.getText() + ", Password: " + passwordField.getText()); // Remember to hash the password in a real application
+
+            // Show confirmation alert
+            AlertHelper.showAlert(Alert.AlertType.CONFIRMATION, owner, "Registration Successful!", "Welcome " + nameField.getText());
+        } catch (IOException e) {
+            e.printStackTrace(); // For debugging. In production, log this error or handle it appropriately.
+            AlertHelper.showAlert(Alert.AlertType.ERROR, owner, "Registration Error", "Failed to save user data.");
+        }
     }
 }
